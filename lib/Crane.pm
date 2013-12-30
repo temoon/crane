@@ -3,7 +3,7 @@
 
 =head1 NAME
 
-Crane - Micro framework/helpers for scripts.
+Crane - Micro framework/helpers
 
 =cut
 
@@ -17,7 +17,7 @@ use File::Basename qw( basename );
 use File::Spec::Functions qw( catdir );
 
 
-our $VERSION = '1.00.0003';
+our $VERSION = '1.01.0004';
 
 
 sub import {
@@ -54,7 +54,7 @@ sub import {
         $params{'name'} //= basename($PROGRAM_NAME) =~ s{[.]p[lm]$}{}rsi;
         
         # Prepare PID file
-        my $pid_filename = catdir($ENV{'BASE_PATH'}, 'run/' . $params{'name'} . '.pid');
+        my $pid_filename = catdir($ENV{'BASE_PATH'}, 'run', "$params{'name'}.pid");
         my $pid_prev     = undef;
         
         open my $fh_pid, '+>>:encoding(UTF-8)', $pid_filename or croak($OS_ERROR);
@@ -119,13 +119,13 @@ Runs as daemon.
 
 Path to configuration file.
 
-=item B<-O> I<path/to/log>, B<--log>=I<path/to/log>
+=item B<-O> I<path/to/messages.log>, B<--log>=I<path/to/messages.log>
 
-Path to log file.
+Path to messages log file.
 
-=item B<-E> I<path/to/error/log>, B<--log-error>=I<path/to/error/log>
+=item B<-E> I<path/to/errors.log>, B<--log-error>=I<path/to/errors.log>
 
-Path to error log file.
+Path to errors log file.
 
 =item B<-D>, B<--debug>, B<--no-debug>
 
@@ -135,7 +135,11 @@ Debug output.
 
 Verbose output.
 
-=item B<-?>, B<--help>
+=item B<--version>
+
+Shows version information and exits.
+
+=item B<--help>
 
 Shows help and exits.
 
@@ -144,18 +148,18 @@ Shows help and exits.
 
 =head1 RETURN VALUE
 
-In case of running I<as daemon> will return 1 if process is already running.
+In case of running as daemon will return 1 if process is already running.
 
 
 =head1 DIAGNOSTICS
 
 =over
 
-=item Process is already running: %d
+=item Process is already running: I<%d>
 
-Where C<%d> is a PID.
+Where I<%d> is a PID.
 
-You tried to run application I<as daemon> while another copy is running.
+You tried to run application as daemon while another copy is running.
 
 =back
 
@@ -184,26 +188,33 @@ As a result we have these two options, a separator and default options.
 
 =head1 ENVIRONMENT
 
-Please, look at L<Crane::Base environment|Crane::Base#> description.
+See L<Crane::Base>.
 
 
 =head1 FILES
 
 =over
 
-=item F<etc/default.conf>
+=item F<E<lt>BASE_PATHE<gt>/etc/*>
 
-Default configuration file in YAML format. Uses if exists.
+Configuration files. See L<Crane::Config|Crane::Config/FILES>.
 
-=item F<log/*>
+=item F<E<lt>BASE_PATHE<gt>/log/*>
 
-Script's log files.
+Log files. See L<Crane::Logger|Crane::Logger/FILES>.
 
-=item F<run/*.pid>
+=item F<E<lt>BASE_PATHE<gt>/run/E<lt>nameE<gt>.pid>
 
-Script's PID files.
+Script's PID file.
 
 =back
+
+
+=head1 BUGS
+
+Please report any bugs or feature requests to
+L<https://github.com/temoon/crane/issues>. I will be notified, and then you'll
+automatically be notified of progress on your bug as I make changes.
 
 
 =head1 AUTHOR
@@ -218,6 +229,17 @@ Copyright (C) 2013-2014 Tema Novikov.
 This library is free software; you can redistribute it and/or modify it under
 the terms of the Artistic License 2.0. For details, see the full text of the
 license in the file LICENSE.
+
+
+=head1 SEE ALSO
+
+=over
+
+=item * B<Github>
+
+https://github.com/temoon/crane
+
+=back
 
 =cut
 

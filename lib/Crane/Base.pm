@@ -3,7 +3,7 @@
 
 =head1 NAME
 
-Crane::Base - Minimal base class for Crane projects.
+Crane::Base - Minimal base class for Crane projects
 
 =cut
 
@@ -17,14 +17,12 @@ use feature ();
 use open qw( :std :utf8 );
 use base qw( Exporter );
 
-use Carp ();
+use Carp;
 use Cwd qw( getcwd );
 use English qw( -no_match_vars );
 use IO::Handle ();
 use Readonly;
 
-
-our $VERSION = '1.00.0003';
 
 our @EXPORT = (
     @Carp::EXPORT,
@@ -127,6 +125,13 @@ Used to determine the base directory for the application environment.
 =back
 
 
+=head1 BUGS
+
+Please report any bugs or feature requests to
+L<https://github.com/temoon/crane/issues>. I will be notified, and then you'll
+automatically be notified of progress on your bug as I make changes.
+
+
 =head1 AUTHOR
 
 Tema Novikov, <novikov.tema@gmail.com>
@@ -139,6 +144,17 @@ Copyright (C) 2013-2014 Tema Novikov.
 This library is free software; you can redistribute it and/or modify it under
 the terms of the Artistic License 2.0. For details, see the full text of the
 license in the file LICENSE.
+
+
+=head1 SEE ALSO
+
+=over
+
+=item * B<Github>
+
+https://github.com/temoon/crane
+
+=back
 
 =cut
 
