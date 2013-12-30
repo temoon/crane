@@ -3,7 +3,7 @@
 
 =head1 NAME
 
-Crane::Options - Command line options and arguments parser.
+Crane::Options - Command line options and arguments parser
 
 =cut
 
@@ -15,8 +15,6 @@ use Crane::Base qw( Exporter );
 use File::Basename qw( basename );
 use Getopt::Long qw( GetOptionsFromArray :config posix_default  );
 
-
-our $VERSION = '1.00.0003';
 
 our @EXPORT = qw(
     &options
@@ -32,7 +30,7 @@ our @EXPORT = qw(
 Readonly::Scalar(our $OPT_SEPARATOR => []);
 
 Readonly::Scalar(our $OPT_VERSION   => [ 'version!', 'Shows version information and exists.' ]);
-Readonly::Scalar(our $OPT_HELP      => [ 'help|?!',  'Shows this help and exits.' ]);
+Readonly::Scalar(our $OPT_HELP      => [ 'help!',    'Shows this help and exits.' ]);
 
 
 =head1 SYNOPSIS
@@ -56,11 +54,11 @@ By default two options are available: B<version> and B<help> (B<?> as short
 alias).
 
 
-=head1 CONSTANTS
+=head1 EXPORTED CONSTANTS
 
 =over
 
-=item $OPT_SEPARATOR
+=item B<$OPT_SEPARATOR>
 
 Not an option exaclty, just a separator in help output.
 
@@ -68,7 +66,7 @@ Equals to:
 
   []
 
-=item $OPT_VERSION
+=item B<$OPT_VERSION>
 
 Version information output.
 
@@ -76,13 +74,13 @@ Equals to:
 
   [ 'version!', 'Shows version information and exists.' ]
 
-=item $OPT_HELP
+=item B<$OPT_HELP>
 
 Help output.
 
 Equals to:
 
-  [ 'help|?!', Shows this help and exits.' ]
+  [ 'help!', Shows this help and exits.' ]
 
 =back
 
@@ -91,35 +89,133 @@ Equals to:
 
 =over
 
-=item options [ LIST ]
+=item B<load_options (@options)>
+
+Parses command line arguments list I<@ARGV> and return reference to hash.
+
+=cut
+
+sub load_options {
+    
+    my ( @options ) = @_;
+    
+    my $options = {};
+    
+    {
+        local $WARNING = 0;
+        
+        # Parse command line
+        GetOptionsFromArray(\@ARGV, $options, grep { defined } map { $_->[0] } @options);
+    }
+    
+    # Application file name
+    my $app = basename($PROGRAM_NAME);
+    
+    # Show version information and exit
+    if ( $options->{'version'} ) {
+        my $version = $main::VERSION // 'not specified';
+        
+        print { *STDOUT } "$app version is $version\n" or croak($OS_ERROR);
+        
+        exit 0;
+    }
+    
+    # Create help ...
+    my $help = "$app <options> <args>\n";
+    
+    # ... and check options
+    foreach my $opt ( @options ) {
+        if ( ref $opt ne 'ARRAY' ) {
+            next;
+        }
+        
+        my $spec   = $opt->[0];
+        my $desc   = $opt->[1];
+        my $params = $opt->[2];
+        
+        # Separator
+        if ( not defined $spec and not defined $desc and not defined $params ) {
+            $help .= "\n";
+        # Option
+        } elsif ( defined $spec and $spec =~ m{^([^!+=:]+)}si ) {
+            my @names = split m{[|]}si, $1;
+            my $name  = $names[0];
+            my $short = ( grep { length == 1 } @names )[0];
+            my $long  = ( grep { length >= 2 } @names )[0];
+            
+            # Check params
+            if ( ref $params eq 'HASH' ) {
+                # Default value
+                if ( exists $params->{'default'} and not exists $options->{ $name } ) {
+                    $options->{ $name } = $params->{'default'};
+                }
+                
+                # Is required
+                if ( $params->{'required'} and not $options->{'help'} and not exists $options->{ $name } ) {
+                    die "Option required: $name\n";
+                }
+            }
+            
+            # Add to help
+            $help .= sprintf q{  %-2s %-20s %s},
+                defined $short ? "-$short" : '',
+                defined $long  ? "--$long" : '',
+                
+                $desc // '';
+            
+            $help .= "\n";
+        } else {
+            croak("Invalid option specification: $spec");
+        }
+    }
+    
+    # Show help and exit
+    if ( $options->{'help'} ) {
+        print { *STDOUT } $help or croak($OS_ERROR);
+        
+        exit 0;
+    }
+    
+    return $options;
+    
+}
+
+=back
+
+
+=head1 EXPORTED FUNCTIONS
+
+=over
+
+=item B<options (@options)>
 
 Returns hash reference to command line options.
 
-Can be configured when first call with list of options. For create an option
+Can be configured when first call with list of I<@options>. For create an option
 you should pass a list of array references with one required and two optional
 items:
 
 =over
 
-=item Specification (required)
+=item B<Specification>
 
-Scalar. Specification from L<Getopt::Long> module.
+Scalar, required. Specification from L<Getopt::Long> module.
 
-=item Description (optional)
+=item B<Description>
 
-Scalar. Text description - what is this option does?
+Scalar. Text description (what is this option does?).
 
-=item Parameters (optional)
+=item B<Parameters>
 
 Hash reference. Additional parameters:
 
 =over
 
-=item default
+=item B<default>
 
 Default value for option if option does not exist.
 
-=item required
+=item B<required>
 
 Flag that option should be exists.
 
@@ -132,91 +228,13 @@ Flag that option should be exists.
 sub options {
     
     return state $options = do {
-        my @options = scalar @_ ? @_ : ( $OPT_VERSION, $OPT_HELP );
-        my $options = {};
-        
-        {
-            local $WARNING = 0;
-            
-            # Parse command line
-            GetOptionsFromArray(\@ARGV, $options, grep { defined } map { $_->[0] } @options);
-        }
-        
-        # Application file name
-        my $app = basename($PROGRAM_NAME);
-        
-        # Show version information and exit
-        if ( $options->{'version'} ) {
-            my $version = $main::VERSION // 'not specified';
-            
-            print { *STDOUT } "$app version is $version\n" or croak($OS_ERROR);
-            
-            exit 0;
-        }
-        
-        # Create help ...
-        my $help = "$app <options> <args>\n";
-        
-        # ... and check options
-        foreach my $opt ( @options ) {
-            if ( ref $opt ne 'ARRAY' ) {
-                next;
-            }
-            
-            my $spec   = $opt->[0];
-            my $desc   = $opt->[1];
-            my $params = $opt->[2];
-            
-            # Separator
-            if ( not defined $spec and not defined $desc and not defined $params ) {
-                $help .= "\n";
-            # Option
-            } elsif ( defined $spec and $spec =~ m{^([^!+=:]+)}si ) {
-                my @names = split m{[|]}si, $1;
-                my $name  = $names[0];
-                my $short = ( grep { length == 1 } @names )[0];
-                my $long  = ( grep { length >= 2 } @names )[0];
-                
-                # Check params
-                if ( ref $params eq 'HASH' ) {
-                    # Default value
-                    if ( exists $params->{'default'} and not exists $options->{ $name } ) {
-                        $options->{ $name } = $params->{'default'};
-                    }
-                    
-                    # Is required
-                    if ( $params->{'required'} and not $options->{'help'} and not exists $options->{ $name } ) {
-                        die "Option required: $name\n";
-                    }
-                }
-                
-                # Add to help
-                $help .= sprintf q{  %-2s %-20s %s},
-                    defined $short ? "-$short" : '',
-                    defined $long  ? "--$long" : '',
-                    
-                    $desc // '';
-                
-                $help .= "\n";
-            } else {
-                croak("Invalid option specification: $spec");
-            }
-        }
-        
-        # Show help and exit
-        if ( $options->{'help'} ) {
-            print { *STDOUT } $help or croak($OS_ERROR);
-            
-            exit 0;
-        }
-        
-        $options;
+        load_options(scalar @_ ? @_ : ( $OPT_VERSION, $OPT_HELP ));
     };
     
 }
 
 
-=item args
+=item B<args ()>
 
 Returns array reference to command line arguments.
 
@@ -235,9 +253,9 @@ sub args {
 
 =over
 
-=item Invalid option specification: %s
+=item Invalid option specification: I<%s>
 
-Where C<%s> is specification string.
+Where I<%s> is specification string.
 
 Fires when required parameter of specification is not defined or incorrect.
 
@@ -248,9 +266,9 @@ Fires when required parameter of specification is not defined or incorrect.
 
 =over
 
-=item Option required: %s
+=item Option required: I<%s>
 
-Where C<%s> is an option name.
+Where I<%s> is an option name.
 
 Option does not exist but required.
 
@@ -304,6 +322,13 @@ Help output:
     -? --help               Shows this help and exits.
 
 
+=head1 BUGS
+
+Please report any bugs or feature requests to
+L<https://github.com/temoon/crane/issues>. I will be notified, and then you'll
+automatically be notified of progress on your bug as I make changes.
+
+
 =head1 AUTHOR
 
 Tema Novikov, <novikov.tema@gmail.com>
@@ -316,6 +341,17 @@ Copyright (C) 2013-2014 Tema Novikov.
 This library is free software; you can redistribute it and/or modify it under
 the terms of the Artistic License 2.0. For details, see the full text of the
 license in the file LICENSE.
+
+
+=head1 SEE ALSO
+
+=over
+
+=item * B<Github>
+
+https://github.com/temoon/crane
+
+=back
 
 =cut
 
