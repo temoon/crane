@@ -17,7 +17,7 @@ use File::Basename qw( basename );
 use File::Spec::Functions qw( catdir );
 
 
-our $VERSION = '1.00.0004';
+our $VERSION = '1.01.0004';
 
 
 sub import {
