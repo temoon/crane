@@ -37,18 +37,20 @@ my $DEFAULT_CONFIG = {
 
 =head1 SYNOPSIS
 
-  use Crane::Config;
-  
-  my $filename = config->{'log'}->{'filename'};
+ use Crane::Config;
+ 
+ my $filename = config->{'log'}->{'filename'};
 
 
 =head1 DESCRIPTION
 
 Configuration manager which operates with YAML configurations. Settings are
-available as a hash reference returned by L</config> function.
+available as a hash reference returned by L<config|/"config ($config,
+@filenames)"> function.
 
-You can specify default configuration and filename by passing it to L</config>
-function when first call (see description below).
+You can specify default configuration and filename by passing it to
+L<config|/"config ($config, @filenames)"> function when first call (see
+description below).
 
 
 =head1 OPTIONS
@@ -66,7 +68,7 @@ If option is available will use as path to configuration file.
 
 =over
 
-=item B<config ($config, @filenames)>
+=item B<config> (I<$config>, I<@filenames>)
 
 Returns link to current configuration.
 
@@ -95,7 +97,7 @@ sub config {
 
 =over
 
-=item B<merge_config ($original, $config)>
+=item B<merge_config> (I<$original>, I<$config>)
 
 Merge two configs (I<$config> to I<$original>).
 
@@ -127,7 +129,7 @@ sub merge_config {
 }
 
 
-=item B<read_config ($filename)>
+=item B<read_config> (I<$filename>)
 
 Reads confugration from file named I<$filename>.
 
@@ -161,7 +163,7 @@ sub read_config {
 }
 
 
-=item B<write_config ($config, $filename)>
+=item B<write_config> (I<$config>, I<$filename>)
 
 Saves configuration I<$config> to file named I<$filename>.
 
@@ -206,7 +208,7 @@ sub write_config {
 }
 
 
-=item B<load_config ($config, @filenames)>
+=item B<load_config> (I<$config>, I<@filenames>)
 
 Load configurations from files named I<@filenames> and merges them to
 configuration I<$config> and I<default> configuration.
@@ -307,13 +309,7 @@ Which results to hash reference:
 
 =head1 ENVIRONMENT
 
-=over
-
-=item BASE_PATH
-
-See L<Crane::Base>.
-
-=back
+See L<Crane::Base|Crane::Base/"ENVIRONMENT">.
 
 
 =head1 FILES
@@ -330,8 +326,8 @@ Default configuration file.
 =head1 BUGS
 
 Please report any bugs or feature requests to
-L<https://github.com/temoon/crane/issues>. I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
+L<https://rt.cpan.org/Public/Bug/Report.html?Queue=Crane> or to
+L<https://github.com/temoon/crane/issues>.
 
 
 =head1 AUTHOR
@@ -352,9 +348,13 @@ license in the file LICENSE.
 
 =over
 
+=item * B<RT Cpan>
+
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=Crane>
+
 =item * B<Github>
 
-https://github.com/temoon/crane
+L<https://github.com/temoon/crane>
 
 =back
 

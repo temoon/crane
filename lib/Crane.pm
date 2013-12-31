@@ -11,13 +11,13 @@ package Crane;
 
 
 use Crane::Base;
-use Crane::Options;
+use Crane::Options qw( :opts options );
 
 use File::Basename qw( basename );
 use File::Spec::Functions qw( catdir );
 
 
-our $VERSION = '1.01.0005';
+our $VERSION = '1.01.0006';
 
 
 sub import {
@@ -188,22 +188,22 @@ As a result we have these two options, a separator and default options.
 
 =head1 ENVIRONMENT
 
-See L<Crane::Base>.
+See L<Crane::Base|Crane::Base/"ENVIRONMENT">.
 
 
 =head1 FILES
 
 =over
 
-=item F<E<lt>BASE_PATHE<gt>/etc/*>
+=item F<E<lt>BASE_PATHE<gt>/etc/*.conf>
 
-Configuration files. See L<Crane::Config|Crane::Config/FILES>.
+Configuration files. See L<Crane::Config|Crane::Config/"FILES">.
 
-=item F<E<lt>BASE_PATHE<gt>/log/*>
+=item F<E<lt>BASE_PATHE<gt>/log/*.log>
 
-Log files. See L<Crane::Logger|Crane::Logger/FILES>.
+Log files. See L<Crane::Logger|Crane::Logger/"FILES">.
 
-=item F<E<lt>BASE_PATHE<gt>/run/E<lt>nameE<gt>.pid>
+=item F<E<lt>BASE_PATHE<gt>/run/*.pid>
 
 Script's PID file.
 
@@ -213,8 +213,8 @@ Script's PID file.
 =head1 BUGS
 
 Please report any bugs or feature requests to
-L<https://github.com/temoon/crane/issues>. I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
+L<https://rt.cpan.org/Public/Bug/Report.html?Queue=Crane> or to
+L<https://github.com/temoon/crane/issues>.
 
 
 =head1 AUTHOR
@@ -235,9 +235,13 @@ license in the file LICENSE.
 
 =over
 
+=item * B<RT Cpan>
+
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=Crane>
+
 =item * B<Github>
 
-https://github.com/temoon/crane
+L<https://github.com/temoon/crane>
 
 =back
 

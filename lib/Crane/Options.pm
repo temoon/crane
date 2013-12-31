@@ -19,11 +19,19 @@ use Getopt::Long qw( GetOptionsFromArray :config posix_default  );
 our @EXPORT = qw(
     &options
     &args
-    
+);
+
+our @EXPORT_OPTS = qw(
     $OPT_SEPARATOR
     
     $OPT_VERSION
     $OPT_HELP
+);
+
+our @EXPORT_OK = ( @EXPORT_OPTS );
+
+our %EXPORT_TAGS = (
+    'opts' => \@EXPORT_OPTS,
 );
 
 
@@ -44,17 +52,18 @@ Readonly::Scalar(our $OPT_HELP      => [ 'help!',    'Shows this help and exits.
 =head1 DESCRIPTION
 
 Parses command line options and arguments. Options are available as hash
-reference returned by L</options> function and arguments are available as array
-reference returned by L</args> function.
+reference returned by L<options|/"options (@options)"> function and arguments are available as array
+reference returned by L<args|/"args ()"> function.
 
 You can configure options by passing list of array references when first call
-L</options> function (see description below).
+L<options|/"options (@options)"> function (see description below).
 
-By default two options are available: B<version> and B<help> (B<?> as short
-alias).
+By default two options are available: B<version> and B<help>.
 
 
 =head1 EXPORTED CONSTANTS
+
+=head2 Tag :opts - predefined options
 
 =over
 
@@ -85,13 +94,83 @@ Equals to:
 =back
 
 
+=head1 EXPORTED FUNCTIONS
+
+=over
+
+=item B<options> (I<@options>)
+
+Returns hash reference to command line options.
+
+Can be configured when first call with list of I<@options>. For create an option
+you should pass a list of array references with one required and two optional
+items:
+
+=over
+
+=item B<Specification>
+
+Scalar, required. Specification from L<Getopt::Long|Getopt::Long> module.
+
+=item B<Description>
+
+Scalar. Text description (what is this option does?).
+
+=item B<Parameters>
+
+Hash reference. Additional parameters:
+
+=over
+
+=item B<default>
+
+Default value for option if option does not exist.
+
+=item B<required>
+
+Flag that option should be exists.
+
+=back
+
+=back
+
+Separator is empty array reference.
+
+=cut
+
+sub options {
+    
+    return state $options = do {
+        load_options(scalar @_ ? @_ : ( $OPT_VERSION, $OPT_HELP ));
+    };
+    
+}
+
+
+=item B<args> ()
+
+Returns array reference to command line arguments.
+
+=cut
+
+sub args {
+    
+    return state $args = [ @ARGV ];
+    
+}
+
+=back
+
+
 =head1 FUNCTIONS
 
 =over
 
-=item B<load_options (@options)>
+=item B<load_options> (I<@options>)
 
 Parses command line arguments list I<@ARGV> and return reference to hash.
+
+See L<@options parameter description|/"options (@options)">.
 
 =cut
 
@@ -183,72 +262,6 @@ sub load_options {
 =back
 
 
-=head1 EXPORTED FUNCTIONS
-
-=over
-
-=item B<options (@options)>
-
-Returns hash reference to command line options.
-
-Can be configured when first call with list of I<@options>. For create an option
-you should pass a list of array references with one required and two optional
-items:
-
-=over
-
-=item B<Specification>
-
-Scalar, required. Specification from L<Getopt::Long> module.
-
-=item B<Description>
-
-Scalar. Text description (what is this option does?).
-
-=item B<Parameters>
-
-Hash reference. Additional parameters:
-
-=over
-
-=item B<default>
-
-Default value for option if option does not exist.
-
-=item B<required>
-
-Flag that option should be exists.
-
-=back
-
-=back
-
-=cut
-
-sub options {
-    
-    return state $options = do {
-        load_options(scalar @_ ? @_ : ( $OPT_VERSION, $OPT_HELP ));
-    };
-    
-}
-
-
-=item B<args ()>
-
-Returns array reference to command line arguments.
-
-=cut
-
-sub args {
-    
-    return state $args = [ @ARGV ];
-    
-}
-
-=back
-
-
 =head1 ERRORS
 
 =over
@@ -325,8 +338,8 @@ Help output:
 =head1 BUGS
 
 Please report any bugs or feature requests to
-L<https://github.com/temoon/crane/issues>. I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
+L<https://rt.cpan.org/Public/Bug/Report.html?Queue=Crane> or to
+L<https://github.com/temoon/crane/issues>.
 
 
 =head1 AUTHOR
@@ -347,9 +360,13 @@ license in the file LICENSE.
 
 =over
 
+=item * B<RT Cpan>
+
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=Crane>
+
 =item * B<Github>
 
-https://github.com/temoon/crane
+L<https://github.com/temoon/crane>
 
 =back
 
