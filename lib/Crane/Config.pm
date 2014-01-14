@@ -11,7 +11,6 @@ package Crane::Config;
 
 
 use Crane::Base qw( Exporter );
-use Crane::Options;
 
 use File::Spec::Functions qw( catdir );
 use YAML;
@@ -53,17 +52,6 @@ L<config|/"config ($config, @filenames)"> function when first call (see
 description below).
 
 
-=head1 OPTIONS
-
-=over
-
-=item B<--config>=I<path/to/config>
-
-If option is available will use as path to configuration file.
-
-=back
-
-
 =head1 EXPORTED FUNCTIONS
 
 =over
@@ -72,8 +60,8 @@ If option is available will use as path to configuration file.
 
 Returns link to current configuration.
 
-When first call you can specify default configuration I<$config> and/or
-list of config file names I<@filenames>.
+At first call you can specify default configuration I<$config> and/or list of
+config file names I<@filenames>.
 
 =cut
 
@@ -82,10 +70,18 @@ sub config {
     return state $config = do {
         my ( $config, @filenames ) = @_;
         
-        load_config(
-            merge_config($DEFAULT_CONFIG, ref $config eq 'HASH' ? $config : {}),
-            options->{'config'} ? options->{'config'} : scalar @filenames ? @filenames : $DEFAULT_FILENAME,
-        );
+        Readonly::Hash(my %config => %{
+            load_config(
+                merge_config(
+                    $DEFAULT_CONFIG,
+                    ref $config eq 'HASH' ? $config : {},
+                ),
+                
+                scalar @filenames ? @filenames : $DEFAULT_FILENAME,
+            )
+        });
+        
+        \%config;
     };
     
 }
@@ -140,7 +136,7 @@ sub read_config {
     my ( $filename ) = @_;
     
     if ( not defined $filename ) {
-        croak('No file name given');
+        confess('No file name given');
     }
     
     my $config = {};
@@ -150,12 +146,12 @@ sub read_config {
             local $INPUT_RECORD_SEPARATOR = undef;
             return ( YAML::Load(<$fh>) )[0] || {};
         } or do {
-            croak("Incorrect syntax in '$filename': $EVAL_ERROR");
+            confess("Incorrect syntax in '$filename': $EVAL_ERROR");
         };
         
-        close $fh or croak($OS_ERROR);
+        close $fh or confess($OS_ERROR);
     } else {
-        croak("Unable to read config '$filename': $OS_ERROR");
+        confess("Unable to read config '$filename': $OS_ERROR");
     }
     
     return $config;
@@ -174,11 +170,11 @@ sub write_config {
     my ( $config, $filename ) = @_;
     
     if ( ref $config ne 'HASH' ) {
-        croak('Configuration should be a hash reference');
+        confess('Configuration should be a hash reference');
     }
     
     if ( not defined $filename ) {
-        croak('No file name given');
+        confess('No file name given');
     }
     
     # Init YAML
@@ -194,13 +190,13 @@ sub write_config {
     
     # Dump configuration
     if ( open my $fh, '>:encoding(UTF-8)', $filename ) {
-        if ( not eval { print { $fh } $yaml->dump($config) or croak($OS_ERROR) } or $EVAL_ERROR ) {
-            croak("YAML error while writing '$filename': $EVAL_ERROR");
+        if ( not eval { print { $fh } $yaml->dump($config) or confess($OS_ERROR) } or $EVAL_ERROR ) {
+            confess("YAML error while writing '$filename': $EVAL_ERROR");
         }
         
-        close $fh or croak($OS_ERROR);
+        close $fh or confess($OS_ERROR);
     } else {
-        croak("Unable to write config '$filename': $OS_ERROR");
+        confess("Unable to write config '$filename': $OS_ERROR");
     }
     
     return;
@@ -220,11 +216,11 @@ sub load_config {
     my ( $config, @filenames ) = @_;
     
     if ( ref $config ne 'HASH' ) {
-        croak('Configuration should be a hash reference');
+        confess('Configuration should be a hash reference');
     }
     
     foreach my $filename ( @filenames ) {
-        if ( -e $filename ) {
+        if ( defined $filename and -e $filename ) {
             $config = merge_config($config, read_config($filename));
         }
     }
@@ -318,7 +314,7 @@ See L<Crane::Base|Crane::Base/"ENVIRONMENT">.
 
 =item F<E<lt>BASE_PATHE<gt>/etc/default.conf>
 
-Default configuration file.
+Default configuration file (may not exist).
 
 =back
 

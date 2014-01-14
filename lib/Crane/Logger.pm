@@ -52,7 +52,7 @@ our $MESSAGES_FH = *STDOUT;
 
 if ( my $log_filename = options->{'log'} // config->{'log'}->{'filename'} ) {
     if ( -e $log_filename ) {
-        open $MESSAGES_FH, '>>:encoding(UTF-8)', $log_filename or croak("Unable to update log '$log_filename': $OS_ERROR");
+        open $MESSAGES_FH, '>>:encoding(UTF-8)', $log_filename or confess("Unable to update log '$log_filename': $OS_ERROR");
     }
 }
 
@@ -62,7 +62,7 @@ our $ERRORS_FH = *STDERR;
 
 if ( my $log_error_filename = options->{'log-error'} // config->{'log'}->{'error_filename'} ) {
     if ( -e $log_error_filename ) {
-        open $ERRORS_FH, '>>:encoding(UTF-8)', $log_error_filename or croak("Unable to update log '$log_error_filename': $OS_ERROR");
+        open $ERRORS_FH, '>>:encoding(UTF-8)', $log_error_filename or confess("Unable to update log '$log_error_filename': $OS_ERROR");
     }
 }
 
@@ -70,8 +70,8 @@ if ( my $log_error_filename = options->{'log-error'} // config->{'log'}->{'error
 # Close file handles on exit
 END {
     
-    close $MESSAGES_FH or croak($OS_ERROR);
-    close $ERRORS_FH    or croak($OS_ERROR);
+    close $MESSAGES_FH or confess($OS_ERROR);
+    close $ERRORS_FH    or confess($OS_ERROR);
     
 }
 
@@ -180,21 +180,6 @@ and B<FATAL>.
 
 Messages on levels: B<FATAL>, B<ERROR> and B<WARNING> go to error log; B<INFO>,
 B<DEBUG> and B<VERBOSE> go to messages log.
-
-
-=head1 OPTIONS
-
-=over
-
-=item B<--log>=I<path/to/messages.log>
-
-If option is available will use as path to messages log file.
-
-=item B<--log-error>=I<path/to/errors.log>
-
-If option is available will use as path to errors log file.
-
-=back
 
 
 =head1 EXPORTED FUNCTIONS
@@ -320,7 +305,7 @@ sub write_to_fh {
     my ( $fh, @messages ) = @_;
     
     if ( not defined $fh ) {
-        croak('Invalid file handle');
+        confess('Invalid file handle');
     }
     
     local $Data::Dumper::Indent = 1;
@@ -333,7 +318,7 @@ sub write_to_fh {
     
     foreach my $message ( @messages ) {
         foreach my $line ( split m{$INPUT_RECORD_SEPARATOR}osi, ( not defined $message or ref $message ) ? Dumper($message) : $message ) {
-            print { $fh } "[$datetime] $line\n" or croak($OS_ERROR);
+            print { $fh } "[$datetime] $line\n" or confess($OS_ERROR);
         }
     }
     

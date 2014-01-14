@@ -3,7 +3,7 @@
 
 
 use Crane::Base;
-use Crane::Options;
+use Crane::Options qw( :DEFAULT :opts );
 
 use Test::More ( 'tests' => 17 );
 use Test::More::UTF8;

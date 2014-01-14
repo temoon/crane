@@ -91,7 +91,7 @@ Import this package is equivalent to:
 
   use Crane::Base;
   
-  say 'Hello!' or croak($OS_ERROR);
+  say 'Hello!' or confess($OS_ERROR);
 
 
 =head2 Package usage
@@ -108,7 +108,7 @@ Import this package is equivalent to:
   );
   
   sub example {
-      say 'This is an example!' or croak($OS_ERROR);
+      say 'This is an example!' or confess($OS_ERROR);
   }
   
   1;

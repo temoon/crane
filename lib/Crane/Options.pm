@@ -35,12 +35,6 @@ our %EXPORT_TAGS = (
 );
 
 
-Readonly::Scalar(our $OPT_SEPARATOR => []);
-
-Readonly::Scalar(our $OPT_VERSION   => [ 'version!', 'Shows version information and exists.' ]);
-Readonly::Scalar(our $OPT_HELP      => [ 'help!',    'Shows this help and exits.' ]);
-
-
 =head1 SYNOPSIS
 
   use Crane::Options;
@@ -75,6 +69,11 @@ Equals to:
 
   []
 
+=cut
+
+Readonly::Scalar(our $OPT_SEPARATOR => []);
+
+
 =item B<$OPT_VERSION>
 
 Version information output.
@@ -83,6 +82,11 @@ Equals to:
 
   [ 'version!', 'Shows version information and exists.' ]
 
+=cut
+
+Readonly::Scalar(our $OPT_VERSION => [ 'version!', 'Shows version information and exists.' ]);
+
+
 =item B<$OPT_HELP>
 
 Help output.
@@ -90,6 +94,11 @@ Help output.
 Equals to:
 
   [ 'help!', Shows this help and exits.' ]
+
+=cut
+
+Readonly::Scalar(our $OPT_HELP => [ 'help!', 'Shows this help and exits.' ]);
+
 
 =back
 
@@ -194,7 +203,7 @@ sub load_options {
     if ( $options->{'version'} ) {
         my $version = $main::VERSION // 'not specified';
         
-        print { *STDOUT } "$app version is $version\n" or croak($OS_ERROR);
+        print { *STDOUT } "$app version is $version\n" or confess($OS_ERROR);
         
         exit 0;
     }
@@ -244,13 +253,13 @@ sub load_options {
             
             $help .= "\n";
         } else {
-            croak("Invalid option specification: $spec");
+            confess("Invalid option specification: $spec");
         }
     }
     
     # Show help and exit
     if ( $options->{'help'} ) {
-        print { *STDOUT } $help or croak($OS_ERROR);
+        print { *STDOUT } $help or confess($OS_ERROR);
         
         exit 0;
     }
