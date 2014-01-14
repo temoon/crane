@@ -11,18 +11,61 @@ package Crane;
 
 
 use Crane::Base;
-use Crane::Options;
+use Crane::Config;
+use Crane::Options qw( :opts options );
 
-use File::Basename qw( basename );
-use File::Spec::Functions qw( catdir );
+use File::Basename qw( basename dirname );
+use File::Find qw( find );
+use File::Spec::Functions qw( catdir splitdir );
 
 
-our $VERSION = '1.01.0005';
+our $VERSION = '1.02.0007';
+
+
+sub get_package_path {
+    
+    my ( $package ) = @_;
+    
+    my @path      = split m{::}si, $package;
+       $path[-1] .= '.pm';
+    
+    return catdir(@path);
+    
+}
+
+
+sub create_package_alias {
+    
+    my ( $original, $alias ) = @_;
+    
+    eval qq{
+        package $alias;
+        
+        use $original;
+        
+        1;
+    } or do {
+        confess($EVAL_ERROR);
+    };
+    
+    # Tell to Perl that module is read
+    $INC{ get_package_path($alias) } = $INC{ get_package_path($original) };
+    
+    {
+        no strict 'refs';
+        
+        # Create alias
+        *{"${alias}::"} = \*{"${original}::"};
+    }
+    
+    return;
+    
+}
 
 
 sub import {
     
-    my ( $package, %params ) = @_;
+    my ( undef, %params ) = @_;
     
     # Predefined options
     my @options = (
@@ -40,12 +83,47 @@ sub import {
         $OPT_HELP,
     );
     
-    # Custom options will be added to the head
+    # Custom options are going to the head
     if ( ref $params{'options'} eq 'ARRAY' ) {
         unshift @options, @{ $params{'options'} }, $OPT_SEPARATOR;
     }
     
     options(@options);
+    
+    # User defined settings
+    if ( ref $params{'config'} eq 'HASH' ) {
+        config(
+            $params{'config'},
+            options->{'config'} ? options->{'config'} : (),
+        );
+    }
+    
+    # Create namespace
+    if ( defined $params{'namespace'} ) {
+        no warnings 'File::Find';
+        
+        my $path = catdir(dirname(__FILE__), __PACKAGE__);
+        
+        # Create alias for root package
+        create_package_alias(__PACKAGE__, $params{'namespace'});
+        
+        # Create alias for each subpackage
+        my @packages = ();
+        
+        find(
+            sub {
+                if ( my ( $filename ) = $File::Find::name =~ m{^$path/?(.+)[.]pm$}si ) {
+                    push @packages, join '::', splitdir($filename);
+                }
+            },
+            
+            $path,
+        );
+        
+        foreach my $package ( @packages ) {
+            create_package_alias(__PACKAGE__ . "::$package", $params{'namespace'} . "::$package");
+        }
+    }
     
     # Run as daemon
     if ( options->{'daemon'} ) {
@@ -57,7 +135,7 @@ sub import {
         my $pid_filename = catdir($ENV{'BASE_PATH'}, 'run', "$params{'name'}.pid");
         my $pid_prev     = undef;
         
-        open my $fh_pid, '+>>:encoding(UTF-8)', $pid_filename or croak($OS_ERROR);
+        open my $fh_pid, '+>>:encoding(UTF-8)', $pid_filename or confess($OS_ERROR);
         seek $fh_pid, 0, 0;
         
         $pid_prev = <$fh_pid>;
@@ -73,8 +151,8 @@ sub import {
             # Fork
             if ( my $pid = fork ) {
                 truncate $fh_pid, 0;
-                print { $fh_pid } "$pid\n" or croak($OS_ERROR);
-                close $fh_pid              or croak($OS_ERROR);
+                print { $fh_pid } "$pid\n" or confess($OS_ERROR);
+                close $fh_pid              or confess($OS_ERROR);
                 
                 exit 0;
             }
@@ -82,7 +160,7 @@ sub import {
             die "Process is already running: $pid_prev\n";
         }
         
-        close $fh_pid or croak($OS_ERROR);
+        close $fh_pid or confess($OS_ERROR);
     }
     
     return;
@@ -102,6 +180,33 @@ sub import {
 =head1 DESCRIPTION
 
 Micro framework/helpers for comfortably develop projects.
+
+=head2 Import options
+
+You can specify these options when using module:
+
+=over
+
+=item B<name>
+
+Script name, used when run as daemon.
+
+If defined, run as daemon by default. Use B<--no-daemon> command line option to
+cancel this behavior.
+
+=item B<options>
+
+Array (reference) of options which will be added to the head of default options list.
+
+=item B<config>
+
+Hash (reference) with user defined default settings.
+
+=item B<namespace>
+
+Custom namespace. Please, look at examples below.
+
+=back
 
 
 =head1 OPTIONS
@@ -183,27 +288,109 @@ You tried to run application as daemon while another copy is running.
       [ 'to|F=s',   'End of the interval.',   { 'required' => 1 } ],
   ] );
 
-As a result we have these two options, a separator and default options.
+As a result you have these two options, a separator and default options.
+
+
+=head2 Basic namespace usage
+
+  package My;
+  
+  use Crane (
+      'namespace' => 'My',
+      
+      'config' => {
+          'my' => {
+              'autorun' => 1,
+              
+              'hosts' => [
+                  '127.0.0.1',
+                  '127.0.0.2',
+              ],
+          },
+      },
+  );
+  
+  1;
+  
+  ...
+  
+  use My;
+  use My::Config;
+  use My::Logger;
+  
+  log_info(config->{'log'});
+
+
+=head2 Advanced namespace usage
+
+  package My;
+  
+  use Crane::Base;
+  use Crane::Options qw( :opts );
+  
+  require Crane;
+  
+  sub import {
+      my ( $package, $name ) = @_;
+      
+      Crane->import(
+          'namespace' => 'My',
+          'name'      => $name,
+          
+          'options' => [
+              [ 'run!',    'Do action at startup.' ],
+              $OPT_SEPARATOR,
+              [ 'host=s@', 'Host name.' ],
+          ],
+          
+          'config' => {
+              'my' => {
+                  'autorun' => 1,
+                  
+                  'hosts' => [
+                      '127.0.0.1',
+                      '127.0.0.2',
+                  ],
+              },
+          },
+      );
+      
+      return;
+  }
+  
+  1;
+  
+  ...
+  
+  use My 'my_script';
+  
+  sub main {
+      ...
+      
+      return 0;
+  }
+  
+  exit main();
 
 
 =head1 ENVIRONMENT
 
-See L<Crane::Base>.
+See L<Crane::Base|Crane::Base/"ENVIRONMENT">.
 
 
 =head1 FILES
 
 =over
 
-=item F<E<lt>BASE_PATHE<gt>/etc/*>
+=item F<E<lt>BASE_PATHE<gt>/etc/*.conf>
 
-Configuration files. See L<Crane::Config|Crane::Config/FILES>.
+Configuration files. See L<Crane::Config|Crane::Config/"FILES">.
 
-=item F<E<lt>BASE_PATHE<gt>/log/*>
+=item F<E<lt>BASE_PATHE<gt>/log/*.log>
 
-Log files. See L<Crane::Logger|Crane::Logger/FILES>.
+Log files. See L<Crane::Logger|Crane::Logger/"FILES">.
 
-=item F<E<lt>BASE_PATHE<gt>/run/E<lt>nameE<gt>.pid>
+=item F<E<lt>BASE_PATHE<gt>/run/*.pid>
 
 Script's PID file.
 
@@ -213,8 +400,8 @@ Script's PID file.
 =head1 BUGS
 
 Please report any bugs or feature requests to
-L<https://github.com/temoon/crane/issues>. I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
+L<https://rt.cpan.org/Public/Bug/Report.html?Queue=Crane> or to
+L<https://github.com/temoon/crane/issues>.
 
 
 =head1 AUTHOR
@@ -235,9 +422,13 @@ license in the file LICENSE.
 
 =over
 
+=item * B<RT Cpan>
+
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=Crane>
+
 =item * B<Github>
 
-https://github.com/temoon/crane
+L<https://github.com/temoon/crane>
 
 =back
 

@@ -52,7 +52,7 @@ our $MESSAGES_FH = *STDOUT;
 
 if ( my $log_filename = options->{'log'} // config->{'log'}->{'filename'} ) {
     if ( -e $log_filename ) {
-        open $MESSAGES_FH, '>>:encoding(UTF-8)', $log_filename or croak("Unable to update log '$log_filename': $OS_ERROR");
+        open $MESSAGES_FH, '>>:encoding(UTF-8)', $log_filename or confess("Unable to update log '$log_filename': $OS_ERROR");
     }
 }
 
@@ -62,7 +62,7 @@ our $ERRORS_FH = *STDERR;
 
 if ( my $log_error_filename = options->{'log-error'} // config->{'log'}->{'error_filename'} ) {
     if ( -e $log_error_filename ) {
-        open $ERRORS_FH, '>>:encoding(UTF-8)', $log_error_filename or croak("Unable to update log '$log_error_filename': $OS_ERROR");
+        open $ERRORS_FH, '>>:encoding(UTF-8)', $log_error_filename or confess("Unable to update log '$log_error_filename': $OS_ERROR");
     }
 }
 
@@ -70,8 +70,8 @@ if ( my $log_error_filename = options->{'log-error'} // config->{'log'}->{'error
 # Close file handles on exit
 END {
     
-    close $MESSAGES_FH or croak($OS_ERROR);
-    close $ERRORS_FH    or croak($OS_ERROR);
+    close $MESSAGES_FH or confess($OS_ERROR);
+    close $ERRORS_FH    or confess($OS_ERROR);
     
 }
 
@@ -91,15 +91,15 @@ END {
 =head1 DESCRIPTION
 
 Simple log manager with six log levels. Supports auto split messages by "end of
-line" and dump references using L<Data::Dumper>.
+line" and dump references using L<Data::Dumper|Data::Dumper>.
 
 =head2 Log entry
 
-Each log entry looks like this:
+Each log entry looks like ...
 
   [2013-12-30 02:36:22 +0400 1388356582] Hello, world!
 
-and contains:
+... and contains:
 
 =over
 
@@ -150,46 +150,45 @@ In case of log reference, each line will contain "header" (date and times):
 
 =over
 
-=item Fatal
+=item B<FATAL>
 
-=item Error
+Logs messages at a B<FATAL> level only.
 
-=item Warning
+=item B<ERROR>
 
-=item Information
+Logs messages classified as B<ERROR> and B<FATAL>.
 
-=item Debug
+=item B<WARNING>
 
-=item Verbose
+Logs messages classified as B<WARNING>, B<ERROR> and B<FATAL>.
 
-=back
+=item B<INFO>
 
-Levels Fatal, Error and Warning are write to error log or C<STDERR>;
-Information, Debug and Verbose are write to messages log or C<STDOUT>.
+Logs messages classified as B<INFO>, B<WARNING>, B<ERROR> and B<FATAL>.
 
+=item B<DEBUG>
 
-=head1 OPTIONS
+Logs messages classified as B<DEBUG>, B<INFO>, B<WARNING>, B<ERROR> and
+B<FATAL>.
 
-=over
+=item B<VERBOSE>
 
-=item B<--log>=I<path/to/messages.log>
-
-If option is available will use as path to messages log file.
-
-=item B<--log-error>=I<path/to/errors.log>
-
-If option is available will use as path to errors log file.
+Logs messages classified as B<VERBOSE>, B<DEBUG>, B<INFO>, B<WARNING>, B<ERROR>
+and B<FATAL>.
 
 =back
+
+Messages on levels: B<FATAL>, B<ERROR> and B<WARNING> go to error log; B<INFO>,
+B<DEBUG> and B<VERBOSE> go to messages log.
 
 
 =head1 EXPORTED FUNCTIONS
 
 =over
 
-=item B<log_fatal (@messages)>
+=item B<log_fatal> (I<@messages>)
 
-Log I<@messages> with level L</Fatal>.
+Logs I<@messages> with level L<FATAL|/"FATAL">.
 
 =cut
 
@@ -204,9 +203,9 @@ sub log_fatal {
 }
 
 
-=item B<log_error (@messages)>
+=item B<log_error> (I<@messages>)
 
-Log I<@messages> with level L</Error>.
+Logs I<@messages> with level L<ERROR|/"ERROR">.
 
 =cut
 
@@ -221,9 +220,9 @@ sub log_error {
 }
 
 
-=item B<log_warnings (@messages)>
+=item B<log_warning> (I<@messages>)
 
-Log I<@messages> with level L</Warning>.
+Logs I<@messages> with level L<WARNING|/"WARNING">.
 
 =cut
 
@@ -238,9 +237,9 @@ sub log_warning {
 }
 
 
-=item B<log_info (@messages)>
+=item B<log_info> (I<@messages>)
 
-Log I<@messages> with level L</Information>.
+Logs I<@messages> with level L<INFO|/"INFO">.
 
 =cut
 
@@ -255,9 +254,9 @@ sub log_info {
 }
 
 
-=item B<log_debug (@messages)>
+=item B<log_debug> (I<@messages>)
 
-Log I<@messages> with level L</Debug>.
+Logs I<@messages> with level L<DEBUG|/"DEBUG">.
 
 =cut
 
@@ -272,9 +271,9 @@ sub log_debug {
 }
 
 
-=item B<log_verbose (@messages)>
+=item B<log_verbose> (I<@messages>)
 
-Log I<@messages> with level L</Verbose>.
+Logs I<@messages> with level L<VERBOSE|/"VERBOSE">.
 
 =cut
 
@@ -295,7 +294,7 @@ sub log_verbose {
 
 =over
 
-=item B<write_to_fh ($fh, @messages)>
+=item B<write_to_fh> (I<$fh>, I<@messages>)
 
 Write I<@messages> to file handle I<$fh>.
 
@@ -306,7 +305,7 @@ sub write_to_fh {
     my ( $fh, @messages ) = @_;
     
     if ( not defined $fh ) {
-        croak('Invalid file handle');
+        confess('Invalid file handle');
     }
     
     local $Data::Dumper::Indent = 1;
@@ -319,7 +318,7 @@ sub write_to_fh {
     
     foreach my $message ( @messages ) {
         foreach my $line ( split m{$INPUT_RECORD_SEPARATOR}osi, ( not defined $message or ref $message ) ? Dumper($message) : $message ) {
-            print { $fh } "[$datetime] $line\n" or croak($OS_ERROR);
+            print { $fh } "[$datetime] $line\n" or confess($OS_ERROR);
         }
     }
     
@@ -344,7 +343,8 @@ Fires when unable to open or write to log file.
 
 =item Invalid file handle
 
-Fires when call L</write_to_fh> with invalid file handle.
+Fires when call L<write_to_fh|/"write_to_fh ($fh, @messages)"> with invalid file
+handle.
 
 =back
 
@@ -367,8 +367,8 @@ Default log file with errors.
 =head1 BUGS
 
 Please report any bugs or feature requests to
-L<https://github.com/temoon/crane/issues>. I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
+L<https://rt.cpan.org/Public/Bug/Report.html?Queue=Crane> or to
+L<https://github.com/temoon/crane/issues>.
 
 
 =head1 AUTHOR
@@ -389,9 +389,13 @@ license in the file LICENSE.
 
 =over
 
+=item * B<RT Cpan>
+
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=Crane>
+
 =item * B<Github>
 
-https://github.com/temoon/crane
+L<https://github.com/temoon/crane>
 
 =back
 

@@ -11,7 +11,6 @@ package Crane::Config;
 
 
 use Crane::Base qw( Exporter );
-use Crane::Options;
 
 use File::Spec::Functions qw( catdir );
 use YAML;
@@ -37,41 +36,32 @@ my $DEFAULT_CONFIG = {
 
 =head1 SYNOPSIS
 
-  use Crane::Config;
-  
-  my $filename = config->{'log'}->{'filename'};
+ use Crane::Config;
+ 
+ my $filename = config->{'log'}->{'filename'};
 
 
 =head1 DESCRIPTION
 
 Configuration manager which operates with YAML configurations. Settings are
-available as a hash reference returned by L</config> function.
+available as a hash reference returned by L<config|/"config ($config,
+@filenames)"> function.
 
-You can specify default configuration and filename by passing it to L</config>
-function when first call (see description below).
-
-
-=head1 OPTIONS
-
-=over
-
-=item B<--config>=I<path/to/config>
-
-If option is available will use as path to configuration file.
-
-=back
+You can specify default configuration and filename by passing it to
+L<config|/"config ($config, @filenames)"> function when first call (see
+description below).
 
 
 =head1 EXPORTED FUNCTIONS
 
 =over
 
-=item B<config ($config, @filenames)>
+=item B<config> (I<$config>, I<@filenames>)
 
 Returns link to current configuration.
 
-When first call you can specify default configuration I<$config> and/or
-list of config file names I<@filenames>.
+At first call you can specify default configuration I<$config> and/or list of
+config file names I<@filenames>.
 
 =cut
 
@@ -80,10 +70,18 @@ sub config {
     return state $config = do {
         my ( $config, @filenames ) = @_;
         
-        load_config(
-            merge_config($DEFAULT_CONFIG, ref $config eq 'HASH' ? $config : {}),
-            options->{'config'} ? options->{'config'} : scalar @filenames ? @filenames : $DEFAULT_FILENAME,
-        );
+        Readonly::Hash(my %config => %{
+            load_config(
+                merge_config(
+                    $DEFAULT_CONFIG,
+                    ref $config eq 'HASH' ? $config : {},
+                ),
+                
+                scalar @filenames ? @filenames : $DEFAULT_FILENAME,
+            )
+        });
+        
+        \%config;
     };
     
 }
@@ -95,7 +93,7 @@ sub config {
 
 =over
 
-=item B<merge_config ($original, $config)>
+=item B<merge_config> (I<$original>, I<$config>)
 
 Merge two configs (I<$config> to I<$original>).
 
@@ -127,7 +125,7 @@ sub merge_config {
 }
 
 
-=item B<read_config ($filename)>
+=item B<read_config> (I<$filename>)
 
 Reads confugration from file named I<$filename>.
 
@@ -138,7 +136,7 @@ sub read_config {
     my ( $filename ) = @_;
     
     if ( not defined $filename ) {
-        croak('No file name given');
+        confess('No file name given');
     }
     
     my $config = {};
@@ -148,12 +146,12 @@ sub read_config {
             local $INPUT_RECORD_SEPARATOR = undef;
             return ( YAML::Load(<$fh>) )[0] || {};
         } or do {
-            croak("Incorrect syntax in '$filename': $EVAL_ERROR");
+            confess("Incorrect syntax in '$filename': $EVAL_ERROR");
         };
         
-        close $fh or croak($OS_ERROR);
+        close $fh or confess($OS_ERROR);
     } else {
-        croak("Unable to read config '$filename': $OS_ERROR");
+        confess("Unable to read config '$filename': $OS_ERROR");
     }
     
     return $config;
@@ -161,7 +159,7 @@ sub read_config {
 }
 
 
-=item B<write_config ($config, $filename)>
+=item B<write_config> (I<$config>, I<$filename>)
 
 Saves configuration I<$config> to file named I<$filename>.
 
@@ -172,11 +170,11 @@ sub write_config {
     my ( $config, $filename ) = @_;
     
     if ( ref $config ne 'HASH' ) {
-        croak('Configuration should be a hash reference');
+        confess('Configuration should be a hash reference');
     }
     
     if ( not defined $filename ) {
-        croak('No file name given');
+        confess('No file name given');
     }
     
     # Init YAML
@@ -192,13 +190,13 @@ sub write_config {
     
     # Dump configuration
     if ( open my $fh, '>:encoding(UTF-8)', $filename ) {
-        if ( not eval { print { $fh } $yaml->dump($config) or croak($OS_ERROR) } or $EVAL_ERROR ) {
-            croak("YAML error while writing '$filename': $EVAL_ERROR");
+        if ( not eval { print { $fh } $yaml->dump($config) or confess($OS_ERROR) } or $EVAL_ERROR ) {
+            confess("YAML error while writing '$filename': $EVAL_ERROR");
         }
         
-        close $fh or croak($OS_ERROR);
+        close $fh or confess($OS_ERROR);
     } else {
-        croak("Unable to write config '$filename': $OS_ERROR");
+        confess("Unable to write config '$filename': $OS_ERROR");
     }
     
     return;
@@ -206,7 +204,7 @@ sub write_config {
 }
 
 
-=item B<load_config ($config, @filenames)>
+=item B<load_config> (I<$config>, I<@filenames>)
 
 Load configurations from files named I<@filenames> and merges them to
 configuration I<$config> and I<default> configuration.
@@ -218,11 +216,11 @@ sub load_config {
     my ( $config, @filenames ) = @_;
     
     if ( ref $config ne 'HASH' ) {
-        croak('Configuration should be a hash reference');
+        confess('Configuration should be a hash reference');
     }
     
     foreach my $filename ( @filenames ) {
-        if ( -e $filename ) {
+        if ( defined $filename and -e $filename ) {
             $config = merge_config($config, read_config($filename));
         }
     }
@@ -307,13 +305,7 @@ Which results to hash reference:
 
 =head1 ENVIRONMENT
 
-=over
-
-=item BASE_PATH
-
-See L<Crane::Base>.
-
-=back
+See L<Crane::Base|Crane::Base/"ENVIRONMENT">.
 
 
 =head1 FILES
@@ -322,7 +314,7 @@ See L<Crane::Base>.
 
 =item F<E<lt>BASE_PATHE<gt>/etc/default.conf>
 
-Default configuration file.
+Default configuration file (may not exist).
 
 =back
 
@@ -330,8 +322,8 @@ Default configuration file.
 =head1 BUGS
 
 Please report any bugs or feature requests to
-L<https://github.com/temoon/crane/issues>. I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
+L<https://rt.cpan.org/Public/Bug/Report.html?Queue=Crane> or to
+L<https://github.com/temoon/crane/issues>.
 
 
 =head1 AUTHOR
@@ -352,9 +344,13 @@ license in the file LICENSE.
 
 =over
 
+=item * B<RT Cpan>
+
+L<https://rt.cpan.org/Public/Dist/Display.html?Name=Crane>
+
 =item * B<Github>
 
-https://github.com/temoon/crane
+L<https://github.com/temoon/crane>
 
 =back
 
