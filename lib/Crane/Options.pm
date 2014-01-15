@@ -80,11 +80,11 @@ Version information output.
 
 Equals to:
 
-  [ 'version!', 'Shows version information and exists.' ]
+  [ 'version!', 'Shows version information and exits.' ]
 
 =cut
 
-Readonly::Scalar(our $OPT_VERSION => [ 'version!', 'Shows version information and exists.' ]);
+Readonly::Scalar(our $OPT_VERSION => [ 'version!', 'Shows version information and exits.' ]);
 
 
 =item B<$OPT_HELP>
@@ -109,11 +109,11 @@ Readonly::Scalar(our $OPT_HELP => [ 'help!', 'Shows this help and exits.' ]);
 
 =item B<options> (I<@options>)
 
-Returns hash reference to command line options.
+Returns hash reference to the command line options.
 
-Can be configured when first call with list of I<@options>. For create an option
-you should pass a list of array references with one required and two optional
-items:
+Can be configured when first called with the list of I<@options>. To create an
+option you should pass a list of array references with one required and two
+mandatory items:
 
 =over
 

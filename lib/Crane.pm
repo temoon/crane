@@ -19,7 +19,7 @@ use File::Find qw( find );
 use File::Spec::Functions qw( catdir splitdir );
 
 
-our $VERSION = '1.02.0007';
+our $VERSION = '1.02.0008';
 
 
 sub get_package_path {
@@ -204,7 +204,7 @@ Hash (reference) with user defined default settings.
 
 =item B<namespace>
 
-Custom namespace. Please, look at examples below.
+Custom namespace. Please, look at L<examples|/"EXAMPLES"> below.
 
 =back
 
@@ -340,7 +340,7 @@ As a result you have these two options, a separator and default options.
           'options' => [
               [ 'run!',    'Do action at startup.' ],
               $OPT_SEPARATOR,
-              [ 'host=s@', 'Host name.' ],
+              [ 'host=s@', 'Host name(s).' ],
           ],
           
           'config' => {
