@@ -11,5 +11,7 @@ t/01_options.t
 t/02_config.t
 t/03_logger.t
 t/99_app.t
+META.yml
+META.json
 MYMETA.yml
 MYMETA.json
