@@ -13,9 +13,9 @@ isa_ok('Crane::Options', 'Exporter', 'Crane::Options');
 
 can_ok('Crane::Options', qw( options args load_options ));
 
-is_deeply($OPT_SEPARATOR, [],                                                      '$OPT_SEPARATOR');
-is_deeply($OPT_VERSION,   [ 'version!', 'Shows version information and exists.' ], '$OPT_VERSION');
-is_deeply($OPT_HELP,      [ 'help!',    'Shows this help and exits.' ],            '$OPT_HELP');
+is_deeply($OPT_SEPARATOR, [],                                                     '$OPT_SEPARATOR');
+is_deeply($OPT_VERSION,   [ 'version!', 'Shows version information and exits.' ], '$OPT_VERSION');
+is_deeply($OPT_HELP,      [ 'help!',    'Shows this help and exits.' ],           '$OPT_HELP');
 
 
 local @ARGV = qw(

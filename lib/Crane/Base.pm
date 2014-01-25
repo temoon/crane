@@ -16,7 +16,6 @@ use utf8;
 use feature ();
 use open qw( :std :utf8 );
 use base qw( Exporter );
-use namespace::autoclean ();
 
 use Carp;
 use Cwd qw( getcwd );
@@ -41,7 +40,6 @@ sub import {
     warnings->import();
     utf8->import();
     feature->import(':5.14');
-    namespace::autoclean->import('-cleanee' => $caller);
     
     # ISA
     if ( scalar @isa ) {
