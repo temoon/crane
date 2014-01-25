@@ -19,7 +19,7 @@ use File::Find qw( find );
 use File::Spec::Functions qw( catdir splitdir );
 
 
-our $VERSION = '1.02.0008';
+our $VERSION = '1.02.0009';
 
 
 sub get_package_path {
@@ -112,7 +112,7 @@ sub import {
         
         find(
             sub {
-                if ( my ( $filename ) = $File::Find::name =~ m{^$path/?(.+)[.]pm$}si ) {
+                if ( my ( $filename ) = $File::Find::name =~ m{^\Q$path\E/?(.+)[.]pm$}si ) {
                     push @packages, join '::', splitdir($filename);
                 }
             },
