@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
 
 
-=head1 NAME
-
-Crane::Logger - Log manager
-
-=cut
-
 package Crane::Logger;
 
 
@@ -28,6 +22,21 @@ our @EXPORT = qw(
     &log_verbose
 );
 
+our @EXPORT_LEVELS = qw(
+    $LOG_FATAL
+    $LOG_ERROR
+    $LOG_WARNING
+    $LOG_INFO
+    $LOG_DEBUG
+    $LOG_VERBOSE
+);
+
+our @EXPORT_OK = ( @EXPORT_LEVELS );
+
+our %EXPORT_TAGS = (
+    'levels' => \@EXPORT_LEVELS,
+);
+
 
 Readonly::Scalar(our $LOG_FATAL   => 1);
 Readonly::Scalar(our $LOG_ERROR   => 2);
@@ -36,9 +45,18 @@ Readonly::Scalar(our $LOG_INFO    => 4);
 Readonly::Scalar(our $LOG_DEBUG   => 5);
 Readonly::Scalar(our $LOG_VERBOSE => 6);
 
+Readonly::Hash(our %LOG_LEVELS => (
+    $LOG_FATAL   => $LOG_FATAL,    'fatal'   => $LOG_FATAL,
+    $LOG_ERROR   => $LOG_ERROR,    'error'   => $LOG_ERROR,    'err'  => $LOG_ERROR,
+    $LOG_WARNING => $LOG_WARNING,  'warning' => $LOG_WARNING,  'warn' => $LOG_WARNING,
+    $LOG_INFO    => $LOG_INFO,     'info'    => $LOG_INFO,
+    $LOG_DEBUG   => $LOG_DEBUG,    'debug'   => $LOG_DEBUG,
+    $LOG_VERBOSE => $LOG_VERBOSE,  'verbose' => $LOG_VERBOSE
+));
+
 
 # Log level
-our $LOG_LEVEL = config->{'log'}->{'level'} // $LOG_INFO;
+our $LOG_LEVEL = $LOG_LEVELS{ config->{'log'}->{'level'} // $LOG_INFO };
 
 if ( options->{'debug'} ) {
     $LOG_LEVEL = $LOG_DEBUG;
@@ -76,6 +94,109 @@ END {
 }
 
 
+sub log_fatal {
+    
+    if ( $LOG_LEVEL >= $LOG_FATAL ) {
+        write_to_fh($ERRORS_FH, @_);
+    }
+    
+    return;
+    
+}
+
+
+sub log_error {
+    
+    if ( $LOG_LEVEL >= $LOG_ERROR ) {
+        write_to_fh($ERRORS_FH, @_);
+    }
+    
+    return;
+    
+}
+
+
+sub log_warning {
+    
+    if ( $LOG_LEVEL >= $LOG_WARNING ) {
+        write_to_fh($ERRORS_FH, @_);
+    }
+    
+    return;
+    
+}
+
+
+sub log_info {
+    
+    if ( $LOG_LEVEL >= $LOG_INFO ) {
+        write_to_fh($MESSAGES_FH, @_);
+    }
+    
+    return;
+    
+}
+
+
+sub log_debug {
+    
+    if ( $LOG_LEVEL >= $LOG_DEBUG ) {
+        write_to_fh($MESSAGES_FH, @_);
+    }
+    
+    return;
+    
+}
+
+
+sub log_verbose {
+    
+    if ( $LOG_LEVEL >= $LOG_VERBOSE ) {
+        write_to_fh($MESSAGES_FH, @_);
+    }
+    
+    return;
+    
+}
+
+
+sub write_to_fh {
+    
+    my ( $fh, @messages ) = @_;
+    
+    if ( not defined $fh ) {
+        confess('Invalid file handle');
+    }
+    
+    local $Data::Dumper::Indent = 1;
+    local $Data::Dumper::Purity = 0;
+    local $Data::Dumper::Terse  = 1;
+    
+    flock $fh, LOCK_EX;
+    
+    my $datetime = strftime(q{%Y-%m-%d %H:%M:%S %z %s}, localtime);
+    
+    foreach my $message ( @messages ) {
+        foreach my $line ( split m{$INPUT_RECORD_SEPARATOR}osi, ( not defined $message or ref $message ) ? Dumper($message) : $message ) {
+            print { $fh } "[$datetime] $line\n" or confess($OS_ERROR);
+        }
+    }
+    
+    flock $fh, LOCK_UN;
+    
+    return;
+    
+}
+
+
+1;
+
+
+=head1 NAME
+
+Crane::Logger - Log manager
+
+
 =head1 SYNOPSIS
 
   use Crane::Logger;
@@ -92,6 +213,7 @@ END {
 
 Simple log manager with six log levels. Supports auto split messages by "end of
 line" and dump references using L<Data::Dumper|Data::Dumper>.
+
 
 =head2 Log entry
 
@@ -146,6 +268,7 @@ In case of log reference, each line will contain "header" (date and times):
   [2013-12-30 02:36:22 +0400 1388356582]   ]
   [2013-12-30 02:36:22 +0400 1388356582] }
 
+
 =head2 Log levels
 
 =over
@@ -190,102 +313,25 @@ B<DEBUG> and B<VERBOSE> go to messages log.
 
 Logs I<@messages> with level L<FATAL|/"FATAL">.
 
-=cut
-
-sub log_fatal {
-    
-    if ( $LOG_LEVEL >= $LOG_FATAL ) {
-        write_to_fh($ERRORS_FH, @_);
-    }
-    
-    return;
-    
-}
-
-
 =item B<log_error> (I<@messages>)
 
 Logs I<@messages> with level L<ERROR|/"ERROR">.
-
-=cut
-
-sub log_error {
-    
-    if ( $LOG_LEVEL >= $LOG_ERROR ) {
-        write_to_fh($ERRORS_FH, @_);
-    }
-    
-    return;
-    
-}
-
 
 =item B<log_warning> (I<@messages>)
 
 Logs I<@messages> with level L<WARNING|/"WARNING">.
 
-=cut
-
-sub log_warning {
-    
-    if ( $LOG_LEVEL >= $LOG_WARNING ) {
-        write_to_fh($ERRORS_FH, @_);
-    }
-    
-    return;
-    
-}
-
-
 =item B<log_info> (I<@messages>)
 
 Logs I<@messages> with level L<INFO|/"INFO">.
-
-=cut
-
-sub log_info {
-    
-    if ( $LOG_LEVEL >= $LOG_INFO ) {
-        write_to_fh($MESSAGES_FH, @_);
-    }
-    
-    return;
-    
-}
-
 
 =item B<log_debug> (I<@messages>)
 
 Logs I<@messages> with level L<DEBUG|/"DEBUG">.
 
-=cut
-
-sub log_debug {
-    
-    if ( $LOG_LEVEL >= $LOG_DEBUG ) {
-        write_to_fh($MESSAGES_FH, @_);
-    }
-    
-    return;
-    
-}
-
-
 =item B<log_verbose> (I<@messages>)
 
 Logs I<@messages> with level L<VERBOSE|/"VERBOSE">.
-
-=cut
-
-sub log_verbose {
-    
-    if ( $LOG_LEVEL >= $LOG_VERBOSE ) {
-        write_to_fh($MESSAGES_FH, @_);
-    }
-    
-    return;
-    
-}
 
 =back
 
@@ -297,36 +343,6 @@ sub log_verbose {
 =item B<write_to_fh> (I<$fh>, I<@messages>)
 
 Write I<@messages> to file handle I<$fh>.
-
-=cut
-
-sub write_to_fh {
-    
-    my ( $fh, @messages ) = @_;
-    
-    if ( not defined $fh ) {
-        confess('Invalid file handle');
-    }
-    
-    local $Data::Dumper::Indent = 1;
-    local $Data::Dumper::Purity = 0;
-    local $Data::Dumper::Terse  = 1;
-    
-    flock $fh, LOCK_EX;
-    
-    my $datetime = strftime(q{%Y-%m-%d %H:%M:%S %z %s}, localtime);
-    
-    foreach my $message ( @messages ) {
-        foreach my $line ( split m{$INPUT_RECORD_SEPARATOR}osi, ( not defined $message or ref $message ) ? Dumper($message) : $message ) {
-            print { $fh } "[$datetime] $line\n" or confess($OS_ERROR);
-        }
-    }
-    
-    flock $fh, LOCK_UN;
-    
-    return;
-    
-}
 
 =back
 
@@ -353,11 +369,11 @@ handle.
 
 =over
 
-=item F<E<lt>BASE_PATHE<gt>/log/messages.log>
+=item F<log/messages.log>
 
 Default log file with messages.
 
-=item F<E<lt>BASE_PATHE<gt>/log/errors.log>
+=item F<log/errors.log>
 
 Default log file with errors.
 
@@ -398,8 +414,3 @@ L<https://rt.cpan.org/Public/Dist/Display.html?Name=Crane>
 L<https://github.com/temoon/crane>
 
 =back
-
-=cut
-
-
-1;

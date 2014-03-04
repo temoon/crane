@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
 
 
-=head1 NAME
-
-Crane::Config - Configuration manager
-
-=cut
-
 package Crane::Config;
 
 
@@ -21,49 +15,25 @@ our @EXPORT = qw(
     &config
 );
 
+our @EXPORT_OK = qw(
+    &merge_config
+    &read_config
+    &write_config
+    &load_config
+);
 
-my $DEFAULT_FILENAME = catdir($ENV{'BASE_PATH'}, 'etc', 'default.conf');
+
+my $DEFAULT_FILENAME = catdir('etc', 'default.conf');
 
 my $DEFAULT_CONFIG = {
     'log' => {
-        'level'          => 4,                                                  # Default log level is 'info'
+        'level'          => undef,                          # Default log level
         
-        'filename'       => catdir($ENV{'BASE_PATH'}, 'log', 'messages.log'),   # Path to log file (undef -> stdout)
-        'error_filename' => catdir($ENV{'BASE_PATH'}, 'log', 'errors.log'),     # Path to error log file (undef -> stderr)
+        'filename'       => catdir('log', 'messages.log'),  # Path to log file (undef -> stdout)
+        'error_filename' => catdir('log', 'errors.log'),    # Path to error log file (undef -> stderr)
     },
 };
 
-
-=head1 SYNOPSIS
-
- use Crane::Config;
- 
- my $filename = config->{'log'}->{'filename'};
-
-
-=head1 DESCRIPTION
-
-Configuration manager which operates with YAML configurations. Settings are
-available as a hash reference returned by L<config|/"config ($config,
-@filenames)"> function.
-
-You can specify default configuration and filename by passing it to
-L<config|/"config ($config, @filenames)"> function when first call (see
-description below).
-
-
-=head1 EXPORTED FUNCTIONS
-
-=over
-
-=item B<config> (I<$config>, I<@filenames>)
-
-Returns link to current configuration.
-
-At first call you can specify default configuration I<$config> and/or list of
-config file names I<@filenames>.
-
-=cut
 
 sub config {
     
@@ -86,18 +56,6 @@ sub config {
     
 }
 
-=back
-
-
-=head1 FUNCTIONS
-
-=over
-
-=item B<merge_config> (I<$original>, I<$config>)
-
-Merge two configs (I<$config> to I<$original>).
-
-=cut
 
 sub merge_config {
     
@@ -124,12 +82,6 @@ sub merge_config {
     
 }
 
-
-=item B<read_config> (I<$filename>)
-
-Reads confugration from file named I<$filename>.
-
-=cut
 
 sub read_config {
     
@@ -158,12 +110,6 @@ sub read_config {
     
 }
 
-
-=item B<write_config> (I<$config>, I<$filename>)
-
-Saves configuration I<$config> to file named I<$filename>.
-
-=cut
 
 sub write_config {
     
@@ -204,13 +150,6 @@ sub write_config {
 }
 
 
-=item B<load_config> (I<$config>, I<@filenames>)
-
-Load configurations from files named I<@filenames> and merges them to
-configuration I<$config> and I<default> configuration.
-
-=cut
-
 sub load_config {
     
     my ( $config, @filenames ) = @_;
@@ -228,6 +167,66 @@ sub load_config {
     return $config;
     
 }
+
+
+1;
+
+
+=head1 NAME
+
+Crane::Config - Configuration manager
+
+
+=head1 SYNOPSIS
+
+  use Crane::Config;
+  
+  my $filename = config->{'log'}->{'filename'};
+
+
+=head1 DESCRIPTION
+
+Configuration manager which operates with YAML configurations. Settings are
+available as a hash reference returned by L<config|/"config ($config,
+@filenames)"> function.
+
+You can specify default configuration and filename by passing it to
+L<config|/"config ($config, @filenames)"> function when first call (see
+description below).
+
+
+=head1 EXPORTED FUNCTIONS
+
+=over
+
+=item B<config> (I<$config>, I<@filenames>)
+
+Returns link to current configuration.
+
+At first call you can specify default configuration I<$config> and/or list of
+config file names I<@filenames>.
+
+
+=head1 FUNCTIONS
+
+=over
+
+=item B<merge_config> (I<$original>, I<$config>)
+
+Merge two configs (I<$config> to I<$original>).
+
+=item B<read_config> (I<$filename>)
+
+Reads confugration from file named I<$filename>.
+
+=item B<write_config> (I<$config>, I<$filename>)
+
+Saves configuration I<$config> to file named I<$filename>.
+
+=item B<load_config> (I<$config>, I<@filenames>)
+
+Load configurations from files named I<@filenames> and merges them to
+configuration I<$config> and I<default> configuration.
 
 =back
 
@@ -312,7 +311,7 @@ See L<Crane::Base|Crane::Base/"ENVIRONMENT">.
 
 =over
 
-=item F<E<lt>BASE_PATHE<gt>/etc/default.conf>
+=item F<etc/default.conf>
 
 Default configuration file (may not exist).
 
@@ -353,8 +352,3 @@ L<https://rt.cpan.org/Public/Dist/Display.html?Name=Crane>
 L<https://github.com/temoon/crane>
 
 =back
-
-=cut
-
-
-1;
