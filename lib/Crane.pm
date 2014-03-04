@@ -13,7 +13,7 @@ use File::Find qw( find );
 use File::Spec::Functions qw( catdir splitdir );
 
 
-our $VERSION = '1.02.0011';
+our $VERSION = '1.03.0011';
 
 
 sub get_package_path {
