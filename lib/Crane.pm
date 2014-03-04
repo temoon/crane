@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
 
 
-=head1 NAME
-
-Crane - Micro framework/helpers
-
-=cut
-
 package Crane;
 
 
@@ -19,7 +13,7 @@ use File::Find qw( find );
 use File::Spec::Functions qw( catdir splitdir );
 
 
-our $VERSION = '1.02.0010';
+our $VERSION = '1.03.0011';
 
 
 sub get_package_path {
@@ -55,7 +49,7 @@ sub create_package_alias {
         no strict 'refs';
         
         # Create alias
-        *{"${alias}::"} = \*{"${original}::"};
+        *{ "${alias}::" } = \*{ "${original}::" };
     }
     
     return;
@@ -67,11 +61,22 @@ sub import {
     
     my ( undef, %params ) = @_;
     
+    my $caller = caller;
+    
+    Crane::Base->import(ref $params{'base'} eq 'ARRAY' ? @{ $params{'base'} } : ());
+    Crane::Base->export_to_level(1, $caller);
+    
+    {
+        no strict 'refs';
+        push @{ "${caller}::ISA" }, @{ __PACKAGE__ . '::ISA' };
+    }
+    
     # Predefined options
     my @options = (
         [ 'daemon|M!',     'Run as daemon.', { 'default' => $params{'name'} ? 1 : 0 } ],
         $OPT_SEPARATOR,
         [ 'config|C=s',    'Path to configuration file.' ],
+        [ 'pid|P=s',       'Path to PID file.' ],
         $OPT_SEPARATOR,
         [ 'log|O=s',       'Path to log file.' ],
         [ 'log-error|E=s', 'Path to error log file.' ],
@@ -132,7 +137,7 @@ sub import {
         $params{'name'} //= basename($PROGRAM_NAME) =~ s{[.]p[lm]$}{}rsi;
         
         # Prepare PID file
-        my $pid_filename = catdir($ENV{'BASE_PATH'}, 'run', "$params{'name'}.pid");
+        my $pid_filename = options->{'pid'} || catdir('run', "$params{'name'}.pid");
         my $pid_prev     = undef;
         
         open my $fh_pid, '+>>:encoding(UTF-8)', $pid_filename or confess($OS_ERROR);
@@ -168,6 +173,14 @@ sub import {
 }
 
 
+1;
+
+
+=head1 NAME
+
+Crane - Helpers for development in Perl
+
+
 =head1 SYNOPSIS
 
   use Crane;
@@ -179,7 +192,10 @@ sub import {
 
 =head1 DESCRIPTION
 
-Micro framework/helpers for comfortably develop projects.
+Helpers for development in Perl. Includes the most modern technics and rules.
+
+Also imports modules as L<Crane::Base/Crane::Base>;
+
 
 =head2 Import options
 
@@ -194,9 +210,13 @@ Script name, used when run as daemon.
 If defined, run as daemon by default. Use B<--no-daemon> command line option to
 cancel this behavior.
 
+=item B<base>
+
+Array (reference) to list of base modules.
+
 =item B<options>
 
-Array (reference) of options which will be added to the head of default options list.
+Array (reference) of options which will be added to the head of L<default options|/"OPTIONS"> list.
 
 =item B<config>
 
@@ -223,6 +243,10 @@ Runs as daemon.
 =item B<-C> I<path/to/config>, B<--config>=I<path/to/config>
 
 Path to configuration file.
+
+=item B<-P> I<path/to/file_with.pid>, B<--pid>=I<path/to/file_with.pid>
+
+Path to PID file.
 
 =item B<-O> I<path/to/messages.log>, B<--log>=I<path/to/messages.log>
 
@@ -271,9 +295,14 @@ You tried to run application as daemon while another copy is running.
 
 =head1 EXAMPLES
 
+
 =head2 Singleton usage
 
   use Crane;
+  
+  ...
+  
+  use Crane ( 'base' => qw( Mojolicious::Controller ) );
 
 
 =head2 Daemon usage
@@ -382,15 +411,15 @@ See L<Crane::Base|Crane::Base/"ENVIRONMENT">.
 
 =over
 
-=item F<E<lt>BASE_PATHE<gt>/etc/*.conf>
+=item F<etc/*.conf>
 
 Configuration files. See L<Crane::Config|Crane::Config/"FILES">.
 
-=item F<E<lt>BASE_PATHE<gt>/log/*.log>
+=item F<log/*.log>
 
 Log files. See L<Crane::Logger|Crane::Logger/"FILES">.
 
-=item F<E<lt>BASE_PATHE<gt>/run/*.pid>
+=item F<run/*.pid>
 
 Script's PID file.
 
@@ -431,8 +460,3 @@ L<https://rt.cpan.org/Public/Dist/Display.html?Name=Crane>
 L<https://github.com/temoon/crane>
 
 =back
-
-=cut
-
-
-1;

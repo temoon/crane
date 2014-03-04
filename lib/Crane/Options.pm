@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
 
 
-=head1 NAME
-
-Crane::Options - Command line options and arguments parser
-
-=cut
-
 package Crane::Options;
 
 
@@ -28,124 +22,23 @@ our @EXPORT_OPTS = qw(
     $OPT_HELP
 );
 
-our @EXPORT_OK = ( @EXPORT_OPTS );
+our @EXPORT_OK = (
+    qw(
+        &load_options
+    ),
+    
+    @EXPORT_OPTS,
+);
 
 our %EXPORT_TAGS = (
     'opts' => \@EXPORT_OPTS,
 );
 
 
-=head1 SYNOPSIS
-
-  use Crane::Options;
-  
-  my $option = options->{'version'};
-  my $arg2   = args->[1];
-
-
-=head1 DESCRIPTION
-
-Parses command line options and arguments. Options are available as hash
-reference returned by L<options|/"options (@options)"> function and arguments are available as array
-reference returned by L<args|/"args ()"> function.
-
-You can configure options by passing list of array references when first call
-L<options|/"options (@options)"> function (see description below).
-
-By default two options are available: B<version> and B<help>.
-
-
-=head1 EXPORTED CONSTANTS
-
-=head2 Tag :opts - predefined options
-
-=over
-
-=item B<$OPT_SEPARATOR>
-
-Not an option exaclty, just a separator in help output.
-
-Equals to:
-
-  []
-
-=cut
-
 Readonly::Scalar(our $OPT_SEPARATOR => []);
-
-
-=item B<$OPT_VERSION>
-
-Version information output.
-
-Equals to:
-
-  [ 'version!', 'Shows version information and exits.' ]
-
-=cut
-
 Readonly::Scalar(our $OPT_VERSION => [ 'version!', 'Shows version information and exits.' ]);
-
-
-=item B<$OPT_HELP>
-
-Help output.
-
-Equals to:
-
-  [ 'help!', Shows this help and exits.' ]
-
-=cut
-
 Readonly::Scalar(our $OPT_HELP => [ 'help!', 'Shows this help and exits.' ]);
 
-
-=back
-
-
-=head1 EXPORTED FUNCTIONS
-
-=over
-
-=item B<options> (I<@options>)
-
-Returns hash reference to the command line options.
-
-Can be configured when first called with the list of I<@options>. To create an
-option you should pass a list of array references with one required and two
-mandatory items:
-
-=over
-
-=item B<Specification>
-
-Scalar, required. Specification from L<Getopt::Long|Getopt::Long> module.
-
-=item B<Description>
-
-Scalar. Text description (what is this option does?).
-
-=item B<Parameters>
-
-Hash reference. Additional parameters:
-
-=over
-
-=item B<default>
-
-Default value for option if option does not exist.
-
-=item B<required>
-
-Flag that option should be exists.
-
-=back
-
-=back
-
-Separator is empty array reference.
-
-=cut
 
 sub options {
     
@@ -156,37 +49,16 @@ sub options {
 }
 
 
-=item B<args> ()
-
-Returns array reference to command line arguments.
-
-=cut
-
 sub args {
     
     return state $args = [ @ARGV ];
     
 }
 
-=back
-
-
-=head1 FUNCTIONS
-
-=over
-
-=item B<load_options> (I<@options>)
-
-Parses command line arguments list I<@ARGV> and return reference to hash.
-
-See L<@options parameter description|/"options (@options)">.
-
-=cut
 
 sub load_options {
     
-    my ( @options ) = @_;
-    
+    my @options = grep { ref $_ eq 'ARRAY' } @_;
     my $options = {};
     
     {
@@ -209,7 +81,11 @@ sub load_options {
     }
     
     # Create help ...
-    my $help = "$app <options> <args>\n";
+    my $help = "$app <options> <args>\n\n";
+    
+    if ( scalar @options ) {
+        $help .= "OPTIONS:\n";
+    }
     
     # ... and check options
     foreach my $opt ( @options ) {
@@ -268,6 +144,127 @@ sub load_options {
     
 }
 
+
+1;
+
+
+=head1 NAME
+
+Crane::Options - Command line options and arguments parser
+
+
+=head1 SYNOPSIS
+
+  use Crane::Options;
+  
+  my $option = options->{'version'};
+  my $arg2   = args->[1];
+
+
+=head1 DESCRIPTION
+
+Parses command line options and arguments. Options are available as hash
+reference returned by L<options|/"options (@options)"> function and arguments are available as array
+reference returned by L<args|/"args ()"> function.
+
+You can configure options by passing list of array references when first call
+L<options|/"options (@options)"> function (see description below).
+
+By default two options are available: B<version> and B<help>.
+
+
+=head1 EXPORTED CONSTANTS
+
+=head2 Tag :opts - predefined options
+
+=over
+
+=item B<$OPT_SEPARATOR>
+
+Not an option exaclty, just a separator in help output.
+
+Equals to:
+
+  []
+
+=item B<$OPT_VERSION>
+
+Version information output.
+
+Equals to:
+
+  [ 'version!', 'Shows version information and exits.' ]
+
+=item B<$OPT_HELP>
+
+Help output.
+
+Equals to:
+
+  [ 'help!', Shows this help and exits.' ]
+
+=back
+
+
+=head1 EXPORTED FUNCTIONS
+
+=over
+
+=item B<options> (I<@options>)
+
+Returns hash reference to the command line options.
+
+Can be configured when first called with the list of I<@options>. To create an
+option you should pass a list of array references with one required and two
+mandatory items:
+
+=over
+
+=item B<Specification>
+
+Scalar, required. Specification from L<Getopt::Long|Getopt::Long> module.
+
+=item B<Description>
+
+Scalar. Text description (what is this option does?).
+
+=item B<Parameters>
+
+Hash reference. Additional parameters:
+
+=over
+
+=item B<default>
+
+Default value for option if option does not exist.
+
+=item B<required>
+
+Flag that option should be exists.
+
+=back
+
+=back
+
+Separator is empty array reference.
+
+=item B<args> ()
+
+Returns array reference to command line arguments.
+
+=back
+
+
+=head1 FUNCTIONS
+
+=over
+
+=item B<load_options> (I<@options>)
+
+Parses command line arguments list I<@ARGV> and return reference to hash.
+
+See L<@options parameter description|/"options (@options)">.
+
 =back
 
 
@@ -299,6 +296,7 @@ Option does not exist but required.
 
 =head1 EXAMPLES
 
+
 =head2 Simple option in compare with defaults
 
 Configuration:
@@ -317,6 +315,7 @@ Help output:
   
        --version            Shows version information and exists.
     -? --help               Shows this help and exits.
+
 
 =head2 Two required arguments, one with default value and default options
 
@@ -378,8 +377,3 @@ L<https://rt.cpan.org/Public/Dist/Display.html?Name=Crane>
 L<https://github.com/temoon/crane>
 
 =back
-
-=cut
-
-
-1;

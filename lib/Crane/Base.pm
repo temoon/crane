@@ -1,32 +1,27 @@
 # -*- coding: utf-8 -*-
 
 
-=head1 NAME
-
-Crane::Base - Minimal base class for Crane projects
-
-=cut
-
 package Crane::Base;
 
 
 use strict;
 use warnings;
 use utf8;
-use feature ();
+use feature qw( :5.14 );
 use open qw( :std :utf8 );
 use base qw( Exporter );
 
 use Carp;
-use Cwd qw( getcwd );
 use English qw( -no_match_vars );
-use IO::Handle ();
+use IO::Handle;
 use Readonly;
+use Try::Tiny;
 
 
 our @EXPORT = (
     @Carp::EXPORT,
     @English::EXPORT,
+    @Try::Tiny::EXPORT,
 );
 
 
@@ -39,29 +34,30 @@ sub import {
     strict->import();
     warnings->import();
     utf8->import();
-    feature->import(':5.14');
+    feature->import(qw( :5.14 ));
     
-    # ISA
     if ( scalar @isa ) {
         foreach my $isa ( @isa ) {
-            eval "require $isa" or do {}; # Ignore loading errors
+            if ( eval "require $isa" ) {
+                no strict 'refs';
+                push @{ "${caller}::ISA" }, $isa;
+            }
         }
-        
-        no strict 'refs';
-        
-        push @{ "${caller}::ISA" }, @isa;
     }
     
     $class->export_to_level(1, $caller);
     
-    # Base path
-    if ( not defined $ENV{'BASE_PATH'} ) {
-        $ENV{'BASE_PATH'} = getcwd();
-    }
-    
     return;
     
 }
+
+
+1;
+
+
+=head1 NAME
+
+Crane::Base - Minimal base class for Crane projects
 
 
 =head1 SYNOPSIS
@@ -83,9 +79,11 @@ Import this package is equivalent to:
   use English qw( -no_match_vars );
   use IO::Handle;
   use Readonly;
+  use Try::Tiny;
 
 
 =head1 EXAMPLES
+
 
 =head2 Script usage
 
@@ -112,17 +110,6 @@ Import this package is equivalent to:
   }
   
   1;
-
-
-=head1 ENVIRONMENT
-
-=over
-
-=item B<BASE_PATH>
-
-Used to determine the base directory for the application environment.
-
-=back
 
 
 =head1 BUGS
@@ -159,8 +146,3 @@ L<https://rt.cpan.org/Public/Dist/Display.html?Name=Crane>
 L<https://github.com/temoon/crane>
 
 =back
-
-=cut
-
-
-1;
